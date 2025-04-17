@@ -4,12 +4,12 @@ from dotenv import load_dotenv
 
 from langgraph.graph import StateGraph
 
-from agents.date_agent import DateAgent
-from agents.search_agent import SearchAgent
-from agents.content_agent import ContentAgent
-from agents.image_agent import ImageAgent
-from agents.instagram_agent import InstagramAgent
-from config import (
+from instagram_poster.agents.date_agent import DateAgent
+from instagram_poster.agents.search_agent import SearchAgent
+from instagram_poster.agents.content_agent import ContentAgent
+from instagram_poster.agents.image_agent import ImageAgent
+from instagram_poster.agents.instagram_agent import InstagramAgent
+from instagram_poster.config import (
     INSTAGRAM_USERNAME, 
     INSTAGRAM_PASSWORD, 
     MODEL_NAME, 

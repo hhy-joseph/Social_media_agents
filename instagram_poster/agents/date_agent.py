@@ -1,4 +1,4 @@
-from ..utils.date_utils import get_current_date
+from instagram_poster.utils.date_utils import get_current_date
 
 class DateAgent:
     """Agent responsible for determining content type based on the current date."""

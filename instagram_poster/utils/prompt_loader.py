@@ -1,4 +1,3 @@
-# instagram_poster/utils/prompt_loader.py
 import os
 
 class PromptLoader:
