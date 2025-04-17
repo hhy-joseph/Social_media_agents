@@ -217,14 +217,23 @@ Page 2:
         Returns:
             tuple: (title, description, content_pages)
         """
+        # Add debug print
+        print(f"Parsing response text of type: {type(response_text)}")
+        
         if isinstance(response_text, str):
             text = response_text.strip()
         else:
             # Handle potential object with content attribute
             text = getattr(response_text, 'content', str(response_text)).strip()
         
+        # Add debug print
+        print(f"Response text first 100 chars: {text[:100]}")
+        
         # Split by sections using the separator '---'
         sections = text.split("---")
+        
+        # Add debug print
+        print(f"Found {len(sections)} sections after splitting by '---'")
         
         # Extract title (first section)
         title = sections[0].strip() if len(sections) > 0 else "未生成標題"
@@ -239,5 +248,9 @@ Page 2:
         # Split content by "Page X:" pattern
         pages = re.split(r'Page \d+:', content_text)
         content_pages = [page.strip() for page in pages if page.strip()]
+        
+        # Add debug print
+        print(f"Extracted title: {title}")
+        print(f"Extracted {len(content_pages)} content pages")
         
         return title, description, content_pages

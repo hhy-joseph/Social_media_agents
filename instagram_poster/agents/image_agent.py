@@ -1,11 +1,10 @@
 import os
-import subprocess
 from xml.dom import minidom
 import re
 import textwrap
 
 class ImageAgent:
-    """Agent responsible for generating images from SVG templates."""
+    """Agent responsible for generating SVG files from templates."""
     
     def __init__(self, cover_template_path, content_template_path, output_dir):
         self.cover_template_path = cover_template_path
@@ -17,23 +16,39 @@ class ImageAgent:
     
     def generate_images(self, content_data):
         """
-        Generate images based on the provided content data.
+        Generate SVG files based on the provided content data.
         
         Args:
             content_data (dict): Content data including title and content pages
             
         Returns:
-            dict: Paths to generated images
+            dict: Paths to generated files
         """
-        title = content_data["title"]
-        description = content_data["description"]
-        content_pages = content_data["content"]
+        # Add debug logging
+        print(f"Content data type: {type(content_data)}")
+        print(f"Content data keys: {content_data.keys() if isinstance(content_data, dict) else 'Not a dictionary'}")
         
-        # Generate cover image
-        cover_image_path = self._generate_cover_image(title, description)
+        # Safely extract title, description, and content
+        if not isinstance(content_data, dict):
+            print("WARNING: content_data is not a dictionary. Using default values.")
+            title = "人工智慧最新發展"
+            description = "最新技術突破與市場應用"
+            content_pages = ["暫無內容"]
+        else:
+            title = content_data.get("title", "人工智慧最新發展")
+            description = content_data.get("description", "最新技術突破與市場應用")
+            content_pages = content_data.get("content", ["暫無內容"])
         
-        # Generate content images
-        content_image_paths = self._generate_content_images(content_pages)
+        # Generate cover SVG
+        cover_svg_path = self._generate_cover_svg(title, description)
+        
+        # Generate content SVGs
+        content_svg_paths = self._generate_content_svgs(content_pages)
+        
+        # To maintain backward compatibility with the workflow, we'll still use PNG extensions
+        # in the paths, even though we're actually generating SVG files
+        cover_image_path = cover_svg_path.replace('.svg', '.png')
+        content_image_paths = [path.replace('.svg', '.png') for path in content_svg_paths]
         
         return {
             "cover_image": cover_image_path,
@@ -41,18 +56,18 @@ class ImageAgent:
             "all_images": [cover_image_path] + content_image_paths
         }
     
-    def _generate_cover_image(self, title, description):
+    def _generate_cover_svg(self, title, description):
         """
-        Generate cover image using the SVG template.
+        Generate cover SVG using the template.
         
         Args:
             title (str): Title to display on the cover
             description (str): Description for the cover
             
         Returns:
-            str: Path to the generated PNG image
+            str: Path to the generated SVG file
         """
-        output_path = os.path.join(self.output_dir, "cover.png")
+        output_path = os.path.join(self.output_dir, "cover.svg")
         
         # Load the SVG template
         svg_content = self._load_svg_template(self.cover_template_path)
@@ -61,32 +76,26 @@ class ImageAgent:
         modified_svg = self._process_cover_template(svg_content, title, description)
         
         # Save the modified SVG
-        temp_svg_path = os.path.join(self.output_dir, "temp_cover.svg")
-        with open(temp_svg_path, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(modified_svg)
         
-        # Convert SVG to PNG
-        self._convert_svg_to_png(temp_svg_path, output_path)
-        
-        # Clean up temporary file
-        os.remove(temp_svg_path)
-        
+        print(f"已生成封面 SVG 檔案: {output_path}")
         return output_path
     
-    def _generate_content_images(self, content_pages):
+    def _generate_content_svgs(self, content_pages):
         """
-        Generate content images for each page.
+        Generate content SVGs for each page.
         
         Args:
             content_pages (list): List of content for each page
             
         Returns:
-            list: Paths to the generated PNG images
+            list: Paths to the generated SVG files
         """
         output_paths = []
         
         for i, page_content in enumerate(content_pages):
-            output_path = os.path.join(self.output_dir, f"content_{i+1}.png")
+            output_path = os.path.join(self.output_dir, f"content_{i+1}.svg")
             
             # Load the SVG template
             svg_content = self._load_svg_template(self.content_template_path)
@@ -96,16 +105,10 @@ class ImageAgent:
             modified_svg = self._process_content_template(svg_content, title, paragraphs)
             
             # Save the modified SVG
-            temp_svg_path = os.path.join(self.output_dir, f"temp_content_{i+1}.svg")
-            with open(temp_svg_path, "w", encoding="utf-8") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(modified_svg)
             
-            # Convert SVG to PNG
-            self._convert_svg_to_png(temp_svg_path, output_path)
-            
-            # Clean up temporary file
-            os.remove(temp_svg_path)
-            
+            print(f"已生成內容 SVG 檔案: {output_path}")
             output_paths.append(output_path)
         
         return output_paths
@@ -367,34 +370,3 @@ class ImageAgent:
                     element.appendChild(doc.createTextNode("人工智慧的最新發展"))
         
         return doc.toxml()
-    
-    def _convert_svg_to_png(self, svg_path, png_path):
-        """
-        Convert SVG to PNG using a suitable tool.
-        
-        Args:
-            svg_path (str): Path to the SVG file
-            png_path (str): Path for the output PNG file
-            
-        Raises:
-            Exception: If conversion fails
-        """
-        try:
-            # Try using cairosvg (if available)
-            import cairosvg
-            cairosvg.svg2png(url=svg_path, write_to=png_path)
-            print(f"已轉換 {svg_path} 為 {png_path} (使用 cairosvg)")
-        except ImportError:
-            # Fallback to Inkscape CLI if available
-            try:
-                subprocess.run([
-                    "inkscape", 
-                    "--export-filename", png_path,
-                    svg_path
-                ], check=True)
-                print(f"已轉換 {svg_path} 為 {png_path} (使用 Inkscape)")
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                print("警告: 無法轉換 SVG 為 PNG。需要 Inkscape 或 cairosvg。")
-                # Create a simple placeholder file
-                with open(png_path, "wb") as f:
-                    f.write(b"PNG placeholder")

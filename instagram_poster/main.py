@@ -2,7 +2,7 @@ import os
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, END
 
 from instagram_poster.agents.date_agent import DateAgent
 from instagram_poster.agents.search_agent import SearchAgent
@@ -78,45 +78,57 @@ def generate_ai_news_content(state: State) -> State:
     """
     news_data = state.get("news_data", {})
     content = content_agent.generate_ai_news_content(news_data)
+    
+    # Debug print to examine the content structure
+    print(f"Content structure: {type(content)}")
+    if isinstance(content, dict):
+        print(f"Content keys: {content.keys()}")
+        print(f"Title: {content.get('title', 'No title found')}")
+        print(f"Description: {content.get('description', 'No description found')[:50]}...")
+        print(f"Content pages: {len(content.get('content', []))} pages")
+    
     return {**state, "content": content}
 
 def generate_images(state: State) -> State:
     """
-    Generate images based on content.
+    Generate SVG files based on content.
     
     Args:
         state (State): Current workflow state
         
     Returns:
-        State: Updated state with image paths
+        State: Updated state with SVG file paths
     """
+    print(f"State keys in generate_images: {state.keys()}")
+    
     content = state.get("content", {})
+    print(f"Content type: {type(content)}")
+    if isinstance(content, dict):
+        print(f"Content keys: {content.keys()}")
+    else:
+        print("Content is not a dictionary")
+    
+    # Generate SVGs (which will be saved as SVG files, not converted to PNG)
     images = image_agent.generate_images(content)
+    
     return {**state, "images": images}
 
 def should_post_to_instagram(state: State) -> str:
     """
-    Decide whether to post to Instagram based on environment variable.
+    Always return 'skip_instagram' since we're not actually posting to Instagram in this simplified version.
     
     Args:
         state (State): Current workflow state
         
     Returns:
-        str: Next node to execute
+        str: Next node to execute (always 'skip_instagram')
     """
-    # Check environment variable for Instagram posting
-    upload_to_ig = os.getenv("UPLOAD_TO_IG", "False").lower() in ("true", "1", "yes")
-    
-    if upload_to_ig:
-        print("環境變數 UPLOAD_TO_IG 設置為 True，將發布到 Instagram。")
-        return "post_to_instagram"
-    else:
-        print("環境變數 UPLOAD_TO_IG 設置為 False，跳過 Instagram 發布。")
-        return "skip_instagram"
+    print("跳過 Instagram 發布，直接生成 SVG 檔案。")
+    return "skip_instagram"
 
 def post_to_instagram(state: State) -> State:
     """
-    Post content to Instagram.
+    Post content to Instagram (not used in this simplified version).
     
     Args:
         state (State): Current workflow state
@@ -124,19 +136,11 @@ def post_to_instagram(state: State) -> State:
     Returns:
         State: Updated state with posting results
     """
-    content = state.get("content", {})
-    images = state.get("images", {})
-    
-    result = instagram_agent.upload_post(
-        image_paths=images.get("all_images", []),
-        caption=content.get("description", "查看我們的最新人工智慧研究動態！")
-    )
-    
-    return {**state, "instagram_result": result}
+    return {**state, "instagram_result": {"status": "skipped", "message": "已跳過 Instagram 發布"}}
 
 def skip_instagram(state: State) -> State:
     """
-    Skip posting to Instagram but provide info about generated content.
+    Skip posting to Instagram but provide info about generated files.
     
     Args:
         state (State): Current workflow state
@@ -144,16 +148,27 @@ def skip_instagram(state: State) -> State:
     Returns:
         State: Same state with skipped info
     """
-    print("已跳過 Instagram 發布。生成的圖片保存在:", OUTPUT_DIR)
+    images = state.get("images", {})
+    
+    # Print information about generated files
+    print("\n=== 生成的檔案 ===")
+    print(f"封面 SVG: {images.get('cover_image', '').replace('.png', '.svg')}")
+    
+    content_images = images.get('content_images', [])
+    for i, img in enumerate(content_images):
+        print(f"內容頁 {i+1}: {img.replace('.png', '.svg')}")
+    
+    print(f"\n所有檔案已保存在: {OUTPUT_DIR}")
+    print("請使用瀏覽器或 SVG 查看器直接開啟這些 SVG 檔案")
     
     return {**state, "instagram_result": {
         "status": "skipped",
-        "message": "已跳過 Instagram 發布，因為 UPLOAD_TO_IG 設置為 False"
+        "message": "已生成 SVG 檔案，跳過 Instagram 發布"
     }}
 
 def build_workflow() -> StateGraph:
     """
-    Build the Langgraph workflow.
+    Build the simplified Langgraph workflow.
     
     Returns:
         StateGraph: Compiled workflow
@@ -166,34 +181,23 @@ def build_workflow() -> StateGraph:
     workflow.add_node("search_ai_news", search_ai_news)
     workflow.add_node("generate_ai_news_content", generate_ai_news_content)
     workflow.add_node("generate_images", generate_images)
-    workflow.add_node("post_to_instagram", post_to_instagram)
     workflow.add_node("skip_instagram", skip_instagram)
     
-    # Add conditional router
-    workflow.add_conditional_edges(
-        "generate_images",
-        should_post_to_instagram,
-        {
-            "post_to_instagram": "post_to_instagram",
-            "skip_instagram": "skip_instagram"
-        }
-    )
-    
-    # Add edges - simplified flow always going through AI news path
+    # Add edges - simplified flow
     workflow.add_edge("determine_content_type", "search_ai_news")
     workflow.add_edge("search_ai_news", "generate_ai_news_content")
     workflow.add_edge("generate_ai_news_content", "generate_images")
+    workflow.add_edge("generate_images", "skip_instagram")
+    workflow.add_edge("skip_instagram", END)
     
-    # Set entry and exit points
+    # Set entry point
     workflow.set_entry_point("determine_content_type")
-    workflow.add_terminal_node("post_to_instagram")
-    workflow.add_terminal_node("skip_instagram")
     
     return workflow.compile()
 
 def main():
     """Main function to run the workflow."""
-    print("開始 Instagram 人工智慧新聞生成和發佈工作流程...")
+    print("開始 Instagram 人工智慧新聞生成工作流程 (簡化版)...")
     
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -204,10 +208,6 @@ def main():
     # Ensure prompts directory exists
     os.makedirs("instagram_poster/prompts", exist_ok=True)
     
-    # Check Instagram upload setting
-    upload_to_ig = os.getenv("UPLOAD_TO_IG", "False").lower() in ("true", "1", "yes")
-    print(f"Instagram 發佈設置: {'啟用' if upload_to_ig else '禁用'}")
-    
     # Build and run the workflow
     workflow = build_workflow()
     result = workflow.invoke({})
@@ -217,11 +217,8 @@ def main():
     print(f"標題: {result.get('content', {}).get('title', '未知')}")
     print(f"內容頁面數量: {len(result.get('content', {}).get('content', []))}")
     
-    instagram_result = result.get('instagram_result', {})
-    if instagram_result.get('status') == 'skipped':
-        print(f"Instagram 發佈: 已跳過 (圖片已保存至 {OUTPUT_DIR})")
-    else:
-        print(f"Instagram 發佈結果: {instagram_result.get('status', '未知')}")
+    print("\n您可以在以下位置找到生成的 SVG 檔案:")
+    print(f"  {OUTPUT_DIR}")
     
     return result
 

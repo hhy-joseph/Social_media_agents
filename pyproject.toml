@@ -13,6 +13,7 @@ dependencies = [
     "langchain-xai>=0.2.3",
     "langgraph>=0.3.30",
     "langsmith>=0.3.31",
+    "pycairo>=1.28.0",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.1.0",
     "pytz>=2025.2",

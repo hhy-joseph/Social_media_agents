@@ -30,3 +30,10 @@ Page 2:
 [第2頁內容]
 
 ... 依此類推 ...
+
+Return in json format
+{
+    'title':<title>, 
+    'description':<description on the instagram post>, 
+    'content_pages':[<content on the image of page2>,<content on the image of page3>,...,<content on the image of pagen>]
+}
