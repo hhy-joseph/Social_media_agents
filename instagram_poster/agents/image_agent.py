@@ -2,6 +2,7 @@ import os
 import subprocess
 from xml.dom import minidom
 import re
+import textwrap
 
 class ImageAgent:
     """Agent responsible for generating images from SVG templates."""
@@ -136,7 +137,7 @@ class ImageAgent:
                     bullet_points = line.split('•')
                     for point in bullet_points:
                         if point.strip():
-                            paragraphs.append(point.strip())
+                            paragraphs.append('• ' + point.strip())
                 else:
                     paragraphs.append(line)
         
@@ -160,6 +161,23 @@ class ImageAgent:
         with open(template_path, "r", encoding="utf-8") as f:
             return f.read()
     
+    def _truncate_text(self, text, max_length, add_ellipsis=True):
+        """
+        Truncate text to fit in SVG elements.
+        
+        Args:
+            text (str): Text to truncate
+            max_length (int): Maximum length
+            add_ellipsis (bool): Whether to add ellipsis
+            
+        Returns:
+            str: Truncated text
+        """
+        if len(text) <= max_length:
+            return text
+        
+        return text[:max_length] + ('...' if add_ellipsis else '')
+    
     def _process_cover_template(self, svg_content, title, description):
         """
         Process the cover template by inserting title and description.
@@ -172,6 +190,9 @@ class ImageAgent:
         Returns:
             str: Processed SVG content
         """
+        # Remove markdown formatting from title if present
+        title = title.replace('#', '').strip()
+        
         # Parse SVG content
         doc = minidom.parseString(svg_content)
         
@@ -183,9 +204,46 @@ class ImageAgent:
                 while element.firstChild:
                     element.removeChild(element.firstChild)
                 
-                # Add new title (limit to 20 chars to fit)
-                short_title = title[:20] + ('...' if len(title) > 20 else '')
-                element.appendChild(doc.createTextNode(short_title))
+                # Create tspan element for the title with proper wrapping
+                # Split title into two lines if it's too long
+                if len(title) > 24:
+                    # Create two lines with approximately equal length
+                    words = title.split()
+                    line1 = []
+                    line2 = []
+                    
+                    # Distribute words between lines
+                    current_line = line1
+                    for word in words:
+                        if len(' '.join(current_line + [word])) <= 24:
+                            current_line.append(word)
+                        else:
+                            if current_line == line1:
+                                current_line = line2
+                                current_line.append(word)
+                            else:
+                                # If already on second line, just append and will truncate later
+                                current_line.append(word)
+                    
+                    # Create first line tspan
+                    tspan1 = doc.createElement('tspan')
+                    tspan1.setAttribute('x', '540')  # Center align
+                    tspan1.setAttribute('text-anchor', 'middle')  # Center align
+                    line1_text = self._truncate_text(' '.join(line1), 24)
+                    tspan1.appendChild(doc.createTextNode(line1_text))
+                    element.appendChild(tspan1)
+                    
+                    # Create second line tspan
+                    tspan2 = doc.createElement('tspan')
+                    tspan2.setAttribute('x', '540')  # Center align
+                    tspan2.setAttribute('dy', '80')  # Line spacing
+                    tspan2.setAttribute('text-anchor', 'middle')  # Center align
+                    line2_text = self._truncate_text(' '.join(line2), 24)
+                    tspan2.appendChild(doc.createTextNode(line2_text))
+                    element.appendChild(tspan2)
+                else:
+                    # Single line title
+                    element.appendChild(doc.createTextNode(title))
             
             # Update subtitle with description
             elif element.getAttribute('id') == 'subtitle-1' or element.getAttribute('id') == 'subtitle-2':
@@ -193,17 +251,16 @@ class ImageAgent:
                 while element.firstChild:
                     element.removeChild(element.firstChild)
                 
-                # Add part of the description to subtitle
-                if element.getAttribute('id') == 'subtitle-1':
-                    if len(description) > 40:
-                        element.appendChild(doc.createTextNode(description[:40] + '...'))
-                    else:
-                        element.appendChild(doc.createTextNode(description))
-                else:
-                    if len(description) > 40:
-                        element.appendChild(doc.createTextNode('...'))
-                    else:
-                        element.appendChild(doc.createTextNode(''))
+                # Split description into two parts for two subtitle elements
+                if len(description) > 0:
+                    parts = textwrap.wrap(description, width=30)
+                    
+                    if element.getAttribute('id') == 'subtitle-1':
+                        # First subtitle gets first part
+                        element.appendChild(doc.createTextNode(parts[0] if parts else ''))
+                    elif element.getAttribute('id') == 'subtitle-2' and len(parts) > 1:
+                        # Second subtitle gets second part
+                        element.appendChild(doc.createTextNode(parts[1]))
             
             # Update hashtag
             elif element.getAttribute('id') == 'hashtag':
@@ -239,9 +296,43 @@ class ImageAgent:
                 while element.firstChild:
                     element.removeChild(element.firstChild)
                 
-                # Add new title (limit to 20 chars to fit)
-                short_title = title[:20] + ('...' if len(title) > 20 else '')
-                element.appendChild(doc.createTextNode(short_title))
+                # Handle multi-line titles
+                if len(title) > 20:
+                    # Create two lines with approximately equal length
+                    words = title.split()
+                    line1 = []
+                    line2 = []
+                    
+                    # Distribute words between lines
+                    current_line = line1
+                    for word in words:
+                        if len(' '.join(current_line + [word])) <= 20:
+                            current_line.append(word)
+                        else:
+                            if current_line == line1:
+                                current_line = line2
+                                current_line.append(word)
+                            else:
+                                # If already on second line, just append and will truncate later
+                                current_line.append(word)
+                    
+                    # Create first line tspan
+                    tspan1 = doc.createElement('tspan')
+                    tspan1.setAttribute('x', '190')
+                    line1_text = self._truncate_text(' '.join(line1), 20)
+                    tspan1.appendChild(doc.createTextNode(line1_text))
+                    element.appendChild(tspan1)
+                    
+                    # Create second line tspan
+                    tspan2 = doc.createElement('tspan')
+                    tspan2.setAttribute('x', '190')
+                    tspan2.setAttribute('dy', '50')
+                    line2_text = self._truncate_text(' '.join(line2), 20)
+                    tspan2.appendChild(doc.createTextNode(line2_text))
+                    element.appendChild(tspan2)
+                else:
+                    # Single line title
+                    element.appendChild(doc.createTextNode(title))
         
         # Update paragraphs
         for i, para in enumerate(paragraphs[:7], 1):  # Limit to 7 paragraphs
@@ -252,9 +343,13 @@ class ImageAgent:
                     while element.firstChild:
                         element.removeChild(element.firstChild)
                     
-                    # Add new paragraph (limit to 25 chars to fit)
-                    short_para = para[:25] + ('...' if len(para) > 25 else '')
-                    element.appendChild(doc.createTextNode(short_para))
+                    # Create multiline paragraph if needed
+                    if len(para) > 25:
+                        parts = textwrap.wrap(para, width=25, break_long_words=False)
+                        first_part = parts[0] if parts else ''
+                        element.appendChild(doc.createTextNode(first_part + ('' if len(parts) <= 1 else '...')))
+                    else:
+                        element.appendChild(doc.createTextNode(para))
         
         # Update highlight text with a key point
         highlight_elements = doc.getElementsByTagName('text')
@@ -266,7 +361,7 @@ class ImageAgent:
                 
                 # Add a key point from paragraphs if available
                 if paragraphs and len(paragraphs) >= 2:
-                    key_point = paragraphs[1][:30] + ('...' if len(paragraphs[1]) > 30 else '')
+                    key_point = self._truncate_text(paragraphs[1].replace('• ', ''), 30)
                     element.appendChild(doc.createTextNode(key_point))
                 else:
                     element.appendChild(doc.createTextNode("人工智慧的最新發展"))
@@ -290,7 +385,7 @@ class ImageAgent:
             cairosvg.svg2png(url=svg_path, write_to=png_path)
             print(f"已轉換 {svg_path} 為 {png_path} (使用 cairosvg)")
         except ImportError:
-            # Fallback to Inkscape CLI
+            # Fallback to Inkscape CLI if available
             try:
                 subprocess.run([
                     "inkscape", 
@@ -298,8 +393,8 @@ class ImageAgent:
                     svg_path
                 ], check=True)
                 print(f"已轉換 {svg_path} 為 {png_path} (使用 Inkscape)")
-            except subprocess.CalledProcessError:
+            except (subprocess.CalledProcessError, FileNotFoundError):
                 print("警告: 無法轉換 SVG 為 PNG。需要 Inkscape 或 cairosvg。")
-                # In a real implementation, you might want to raise an exception here
-                with open(png_path, "w") as f:
-                    f.write("Placeholder for PNG")  # Just create an empty file as placeholder
+                # Create a simple placeholder file
+                with open(png_path, "wb") as f:
+                    f.write(b"PNG placeholder")
