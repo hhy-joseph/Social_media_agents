@@ -1,21 +1,27 @@
-# Instagram credentials
-INSTAGRAM_USERNAME = "your_instagram_username"  # Replace with actual credentials
-INSTAGRAM_PASSWORD = "your_instagram_password"  # Replace with actual credentials
+import os
+import shutil
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Instagram credentials - prioritize environment variables
+INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "your_instagram_username")
+INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "your_instagram_password")
+
+# Upload to Instagram control
+UPLOAD_TO_INSTAGRAM = os.getenv("UPLOAD_TO_IG", "False").lower() in ("true", "1", "yes")
 
 # LLM Configuration
-MODEL_NAME = "grok-2-1212"
+MODEL_NAME = os.getenv("MODEL_NAME", "grok-2-1212")
 
 # Content settings
-MAX_PAGES = 7  # Maximum number of content pages
+MAX_PAGES = int(os.getenv("MAX_PAGES", "7"))  # Maximum number of content pages
 
 # File paths - updated to use the actual template paths
 COVER_TEMPLATE_PATH = "instagram_poster/static/cover-template.svg"
 CONTENT_TEMPLATE_PATH = "instagram_poster/static/content-template.svg"
-OUTPUT_DIR = "instagram_poster/output"
-
-# Create copies of templates from app/static
-import os
-import shutil
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "instagram_poster/output")
 
 def ensure_templates_exist():
     """Ensure template files exist by copying from app/static if necessary."""
