@@ -41,9 +41,9 @@
   },
   "cover": {
     "hashtag": "主題標籤",
-    "heading_line1": "第一行標題（20字以內）",
-    "heading_line2": "第二行標題（20字以內）",
-    "grey_box_text": "引人注目的短句（嚴格限制在20字以內）"
+    "heading_line1": "第一行標題（20字以內繁體中文）",
+    "heading_line2": "第二行標題（20字以內繁體中文）",
+    "grey_box_text": "引人注目的短句（嚴格限制在20字以內繁體中文）"
   },
   "caption": "完整的Instagram貼文說明文字，包含引人入勝的開場、主要內容摘要、行動號召和SEO優化的標籤（300-500字）",
   "content_pages": [
