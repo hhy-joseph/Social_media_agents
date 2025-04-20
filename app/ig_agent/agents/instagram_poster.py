@@ -1,7 +1,3 @@
-"""
-Instagram posting agent
-"""
-
 import os
 import logging
 from typing import Dict, Any, List, Optional
@@ -82,22 +78,58 @@ class InstagramPoster:
             client = Client()
             client.login(self.username, self.password)
             
-            # Upload as carousel
-            media = client.album_upload(
-                valid_paths,
-                caption=caption
-            )
-            
-            logger.info(f"Posted to Instagram: {media.pk}")
-            return {
-                "posted": True,
-                "media_id": media.pk,
-                "url": f"https://www.instagram.com/p/{media.code}/"
-            }
+            # Check if we have multiple images for carousel or just one
+            if len(valid_paths) > 1:
+                # Upload as carousel
+                try:
+                    media = client.album_upload(
+                        valid_paths,
+                        caption=caption
+                    )
+                    
+                    logger.info(f"Posted carousel to Instagram: {media.pk}")
+                    return {
+                        "posted": True,
+                        "type": "carousel",
+                        "media_id": media.pk,
+                        "url": f"https://www.instagram.com/p/{media.code}/"
+                    }
+                except Exception as carousel_error:
+                    # If carousel upload fails, try uploading the first image as a single post
+                    logger.warning(f"Carousel upload failed: {str(carousel_error)}. Trying single image upload.")
+                    media = client.photo_upload(
+                        valid_paths[0],
+                        caption=caption
+                    )
+                    
+                    logger.info(f"Posted single image to Instagram: {media.pk}")
+                    return {
+                        "posted": True,
+                        "type": "single",
+                        "media_id": media.pk,
+                        "url": f"https://www.instagram.com/p/{media.code}/",
+                        "note": "Uploaded as single image due to carousel error"
+                    }
+            else:
+                # Upload as single image
+                media = client.photo_upload(
+                    valid_paths[0],
+                    caption=caption
+                )
+                
+                logger.info(f"Posted single image to Instagram: {media.pk}")
+                return {
+                    "posted": True,
+                    "type": "single",
+                    "media_id": media.pk,
+                    "url": f"https://www.instagram.com/p/{media.code}/"
+                }
             
         except Exception as e:
-            logger.error(f"Failed to post to Instagram: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Failed to post to Instagram: {error_message}")
             return {
                 "posted": False,
-                "error": str(e)
+                "error": error_message,
+                "suggestion": "Check your Instagram credentials and network connection"
             }
