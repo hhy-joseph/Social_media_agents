@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#f9f9f9" />
+  
+  <!-- Title -->
+  <text x="600" y="50" font-family="Arial, sans-serif" font-size="28" text-anchor="middle" font-weight="bold" fill="#333">
+    Multi-Agent System for Instagram Content Creation
+  </text>
+
+  <!-- User -->
+  <circle cx="600" cy="120" r="40" fill="#6c63ff" opacity="0.7" />
+  <text x="600" y="125" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="white" font-weight="bold">USER</text>
+  
+  <!-- Supervisor -->
+  <rect x="525" y="200" width="150" height="80" rx="10" ry="10" fill="#4caf50" opacity="0.7" />
+  <text x="600" y="230" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white" font-weight="bold">
+    SUPERVISOR
+  </text>
+  <text x="600" y="255" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    Manages workflow
+  </text>
+  
+  <!-- Content Agent -->
+  <rect x="200" y="350" width="200" height="120" rx="10" ry="10" fill="#2196f3" opacity="0.7" />
+  <text x="300" y="380" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white" font-weight="bold">
+    CONTENT AGENT
+  </text>
+  <text x="300" y="405" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    Tools:
+  </text>
+  <text x="300" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • DuckDuckGo Search (LangChain)
+  </text>
+  <text x="300" y="445" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • JSON validation
+  </text>
+  
+  <!-- Image Agent -->
+  <rect x="500" y="350" width="200" height="180" rx="10" ry="10" fill="#ff9800" opacity="0.7" />
+  <text x="600" y="380" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white" font-weight="bold">
+    IMAGE AGENT
+  </text>
+  <text x="600" y="405" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    Tools:
+  </text>
+  <text x="600" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • CairoSVG (SVG → PNG)
+  </text>
+  <text x="600" y="445" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • SVG Template System
+  </text>
+  <text x="600" y="465" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Text Readability Checker
+  </text>
+  <text x="600" y="485" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Dynamic Text Sizing
+  </text>
+  <text x="600" y="505" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Base64 Encoding/Decoding
+  </text>
+  
+  <!-- Code Module -->
+  <rect x="800" y="350" width="200" height="120" rx="10" ry="10" fill="#9c27b0" opacity="0.7" />
+  <text x="900" y="380" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white" font-weight="bold">
+    POSTING MODULE
+  </text>
+  <text x="900" y="405" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    Tools:
+  </text>
+  <text x="900" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Instagrapi (Python API)
+  </text>
+  <text x="900" y="445" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Facebook Graph API
+  </text>
+  
+  <!-- Notification Agent -->
+  <rect x="500" y="600" width="200" height="120" rx="10" ry="10" fill="#e91e63" opacity="0.7" />
+  <text x="600" y="630" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white" font-weight="bold">
+    NOTIFICATION AGENT
+  </text>
+  <text x="600" y="655" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    Tools:
+  </text>
+  <text x="600" y="675" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • SMTP Email (smtplib)
+  </text>
+  <text x="600" y="695" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="white">
+    • Twilio (Free Trial)
+  </text>
+  
+  <!-- Arrows -->
+  <!-- User to Supervisor -->
+  <path d="M600,160 L600,200" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="550" y="185" font-family="Arial, sans-serif" font-size="12" fill="#333">Request</text>
+  
+  <!-- Supervisor to Content Agent -->
+  <path d="M525,240 L300,350" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="380" y="280" font-family="Arial, sans-serif" font-size="12" fill="#333">1. Generate content</text>
+  
+  <!-- Content Agent to Supervisor -->
+  <path d="M330,350 L550,260" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dasharray="5,5" />
+  <text x="390" y="320" font-family="Arial, sans-serif" font-size="12" fill="#333">JSON content</text>
+  
+  <!-- Supervisor to Image Agent -->
+  <path d="M600,280 L600,350" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="635" y="320" font-family="Arial, sans-serif" font-size="12" fill="#333">2. Create images</text>
+  
+  <!-- Image Agent Loop -->
+  <path d="M700,440 L750,440 L750,480 L700,480" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dasharray="5,5" />
+  <text x="750" y="465" font-family="Arial, sans-serif" font-size="12" fill="#333">Retry loop</text>
+  <text x="750" y="480" font-family="Arial, sans-serif" font-size="12" fill="#333">(max 5x)</text>
+  
+  <!-- Image Agent to Supervisor -->
+  <path d="M600,350 L600,280" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dasharray="5,5" />
+  <text x="525" y="320" font-family="Arial, sans-serif" font-size="12" fill="#333">PNG images</text>
+  
+  <!-- Supervisor to Code Module -->
+  <path d="M675,240 L850,350" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="780" y="280" font-family="Arial, sans-serif" font-size="12" fill="#333">3. Post content</text>
+  
+  <!-- Code Module to Supervisor -->
+  <path d="M870,350 L650,260" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" stroke-dasharray="5,5" />
+  <text x="780" y="320" font-family="Arial, sans-serif" font-size="12" fill="#333">Post result</text>
+  
+  <!-- Supervisor to Notification Agent -->
+  <path d="M600,280 L600,600" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="535" y="470" font-family="Arial, sans-serif" font-size="12" fill="#333">4. Send notification</text>
+  
+  <!-- Notification Agent to User -->
+  <path d="M700,650 L1050,650 L1050,120 L640,120" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+  <text x="920" y="630" font-family="Arial, sans-serif" font-size="12" fill="#333">Email/Message with results</text>
+  
+  <!-- Arrowhead marker -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Free Tools Note -->
+  <rect x="800" y="550" width="300" height="170" rx="10" ry="10" fill="#f5f5f5" stroke="#ccc" />
+  <text x="950" y="575" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" font-weight="bold" fill="#333">
+    FREE TOOLS NOTES
+  </text>
+  <text x="820" y="600" font-family="Arial, sans-serif" font-size="12" fill="#333">• DuckDuckGo Search: Free via LangChain</text>
+  <text x="820" y="620" font-family="Arial, sans-serif" font-size="12" fill="#333">• CairoSVG: Free, works in Docker</text>
+  <text x="820" y="640" font-family="Arial, sans-serif" font-size="12" fill="#333">• Email: Free via Gmail SMTP or SendGrid free tier</text>
+  <text x="820" y="660" font-family="Arial, sans-serif" font-size="12" fill="#333">• WhatsApp: Twilio API (free trial) or</text>
+  <text x="820" y="680" font-family="Arial, sans-serif" font-size="12" fill="#333">  pywhatkit (non-API solution)</text>
+  <text x="820" y="700" font-family="Arial, sans-serif" font-size="12" fill="#333">• Template System: Same SVG design for all posts</text>
+</svg>

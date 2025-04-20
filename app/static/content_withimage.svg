@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="#ffffff" />
+  
+  <!-- Border -->
+  <rect x="35" y="35" width="1010" height="1010" rx="10" ry="10" fill="white" stroke="#000000" stroke-width="3" />
+  
+  <!-- Page Number -->
+  <text id="page_number" x="540" y="100" font-family="Arial, sans-serif" font-weight="bold" font-size="40" text-anchor="middle" fill="#000000">0{page_number}</text>
+  
+  <!-- Divider -->
+  <line x1="385" y1="140" x2="695" y2="140" stroke="#000000" stroke-width="4" />
+  
+  <!-- Content Title -->
+  <text id="content_title" x="540" y="220" font-family="Arial, sans-serif" font-weight="bold" font-size="60" text-anchor="middle" fill="#000000">內容標題放這裡</text>
+  
+  <!-- Illustration Area (Optional) -->
+  <g id="illustration_area">
+    <rect x="200" y="280" width="680" height="400" fill="#f7f7f7" rx="10" ry="10" stroke="#dddddd" stroke-width="2" stroke-dasharray="5,5" />
+    <text x="540" y="480" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" fill="#aaaaaa">
+      可選插圖區域
+    </text>
+  </g>
+  
+  <!-- Main Point Text -->
+  <rect x="150" y="730" width="780" height="150" rx="20" ry="20" fill="#f0f0f0" stroke="#000000" stroke-width="1" />
+  <foreignObject x="150" y="730" width="780" height="150">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="padding: 20px; font-family: Arial, sans-serif; font-weight: bold; font-size: 38px; color: #000000;">
+      <div id="main_point">核心訊息放這裡（最多50字）</div>
+    </div>
+  </foreignObject>
+  
+  <!-- Logo -->
+  <rect x="428" y="960" width="60" height="60" fill="#000000" />
+  <text id="logo_text" x="504" y="1000" font-family="Arial, sans-serif" font-weight="bold" font-size="50" text-anchor="start" fill="#000000">AI工程師</text>
+  <text id="sub_text" x="540" y="1030" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" fill="#555555">@datasci_daily</text>
+  
+  <!-- Navigation Dots -->
+  <circle cx="482" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="502" cy="1073" r="6" fill="#000000" />
+  <circle cx="522" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="542" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="562" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="582" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="602" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="622" cy="1073" r="6" fill="#aaaaaa" />
+  <circle cx="642" cy="1073" r="6" fill="#aaaaaa" />
+  
+</svg>
