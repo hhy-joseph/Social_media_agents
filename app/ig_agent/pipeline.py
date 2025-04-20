@@ -62,7 +62,8 @@ def create_pipeline(
     
     content_agent = ContentAgent(
         llm=llm,
-        prompt_path=os.path.join(prompts_dir, "content_generation.txt") if prompts_dir else None
+        prompt_path=os.path.join(prompts_dir, "content_generation.txt") if prompts_dir else None,
+        history_file=os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "content_history.json")
     )
     
     image_agent = ImageAgent(

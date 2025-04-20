@@ -344,7 +344,7 @@ class TemplateProcessor:
         
         if has_cjk:
             # For CJK text, break by character count (each character is a word)
-            chars_per_line = 13  # Reduced for better fit within container
+            chars_per_line = 15  # Reduced for better fit within container
             main_point_with_breaks = ""
             
             # Split text into characters and process
@@ -660,24 +660,5 @@ class TemplateProcessor:
                 # Add font-family attribute
                 new_tag = f'{start_tag} font-family="Songti SC, PingFang SC, Heiti SC, STKaiti, Kaiti SC, SimSong, Noto Sans CJK SC, Arial Unicode MS, Arial, sans-serif"{end_bracket}'
                 svg_content = svg_content.replace(full_tag, new_tag)
-        
-        # Ensure navigation dots are included in the SVG
-        # Check if navigation dots are missing - they should be at the bottom of the SVG
-        if "</svg>" in svg_content and '<circle cx="482" cy="1073"' not in svg_content:
-            # Add standard navigation dots before closing svg tag
-            navigation_dots = """
-  <!-- Navigation Dots -->
-  <circle cx="482" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="502" cy="1073" r="6" fill="#000000" />
-  <circle cx="522" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="542" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="562" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="582" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="602" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="622" cy="1073" r="6" fill="#aaaaaa" />
-  <circle cx="642" cy="1073" r="6" fill="#aaaaaa" />
-"""
-            # Insert navigation dots before SVG closing tag
-            svg_content = svg_content.replace("</svg>", navigation_dots + "\n</svg>")
         
         return svg_content

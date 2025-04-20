@@ -67,9 +67,13 @@ class InstagramAgent:
         from ig_agent.agents.notification_agent import NotificationAgent
         from ig_agent.agents.instagram_poster import InstagramPoster
         
+        # Initialize content agent with history file for duplicate detection
+        history_dir = os.path.join(Path(__file__).parent.parent, "data")
+        os.makedirs(history_dir, exist_ok=True)
         self.content_agent = ContentAgent(
             llm=self.llm,
-            prompt_path=os.path.join(self.prompts_dir, "content_generation.txt")
+            prompt_path=os.path.join(self.prompts_dir, "content_generation.txt"),
+            history_file=os.path.join(history_dir, "content_history.json")
         )
         
         self.image_agent = ImageAgent(
@@ -105,6 +109,17 @@ class InstagramAgent:
         """
         logger.info(f"Generating content for request: {request}")
         self.content_json = self.content_agent.generate(request)
+        
+        # Ensure content_json is a dictionary
+        if isinstance(self.content_json, str):
+            try:
+                import json
+                self.content_json = json.loads(self.content_json)
+                logger.info("Successfully parsed string response into JSON")
+            except json.JSONDecodeError:
+                logger.error("Failed to parse content_json string into JSON")
+                raise ValueError("Content agent returned a string that is not valid JSON")
+                
         return self.content_json
     
     def generate_images(self, content_json=None) -> List[Dict[str, Any]]:
@@ -156,23 +171,35 @@ class InstagramAgent:
         
         return self.notification_status
     
-    def post_to_instagram(self) -> Dict[str, Any]:
+    def post_to_instagram(self, caption: str = None, image_paths: List[str] = None) -> Dict[str, Any]:
         """
         Post content to Instagram
         
+        Args:
+            caption: Optional caption to use instead of stored content
+            image_paths: Optional image paths to use instead of stored paths
+            
         Returns:
             Posting status
         """
-        if not self.content_json:
-            raise ValueError("Content must be generated first")
+        # Use provided parameters or fall back to stored content
+        caption_to_use = caption if caption is not None else self.content_json["caption"] if self.content_json else None
+        paths_to_use = image_paths if image_paths is not None else self.image_paths
         
-        if not self.image_paths:
-            raise ValueError("Images must be generated first")
+        if not caption_to_use:
+            raise ValueError("Caption must be provided or content must be generated first")
+        
+        if not paths_to_use:
+            raise ValueError("Image paths must be provided or images must be generated first")
+        
+        # If image_paths is a list of dicts with 'path' keys, extract just the paths
+        if paths_to_use and isinstance(paths_to_use[0], dict) and 'path' in paths_to_use[0]:
+            paths_to_use = [img['path'] for img in paths_to_use]
         
         logger.info("Posting to Instagram")
         self.instagram_status = self.instagram_poster.post_to_instagram(
-            self.content_json["caption"],
-            self.image_paths
+            caption_to_use,
+            paths_to_use
         )
         
         return self.instagram_status
