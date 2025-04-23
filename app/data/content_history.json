@@ -84,5 +84,91 @@
       "未來趨勢預測",
       "潛在挑戰與解決"
     ]
+  },
+  {
+    "date": "2025-04-22T14:26:14.147647",
+    "signature": "e4d99b8db9425adf98fc63470bd4b632",
+    "cover_heading": "AI革命持續進化 2025年關鍵突破",
+    "hashtag": "AI最新動態",
+    "titles": [
+      "OpenAI模型的進展",
+      "Stanford HAI報告亮點",
+      "Vertex AI新功能",
+      "AI在日常生活中的角色",
+      "未來AI展望",
+      "實用應用建議"
+    ]
+  },
+  {
+    "date": "2025-04-22T14:27:28.514243",
+    "signature": "6ef8e6d08b0fcd765ed82616dd76a77b",
+    "cover_heading": "Google AI大反擊！ o3與o4-mini測試曝光",
+    "hashtag": "AI最新消息",
+    "titles": [
+      "Google AI回擊是什麼？",
+      "o3與o4-mini模型測試",
+      "開源AI視頻工具亮相",
+      "對產業的影響",
+      "實際應用例子",
+      "未來展望",
+      "為什麼這很重要？"
+    ]
+  },
+  {
+    "date": "2025-04-22T14:29:39.661358",
+    "signature": "039e106d1527c430387fd3280613406a",
+    "cover_heading": "AI 2025 重大突破 Stanford 報告揭秘",
+    "hashtag": "AIIndex2025",
+    "titles": [
+      "AI報告核心概述",
+      "AI趨勢與數據",
+      "研究突破與應用",
+      "全球競爭與挑戰",
+      "未來展望與建議",
+      "如何應用AI"
+    ]
+  },
+  {
+    "date": "2025-04-23T13:05:53.769411",
+    "signature": "ed10f862a395afd7033fe8a11c70bdde",
+    "cover_heading": "AI業界震撼 2025年4月突破",
+    "hashtag": "AI最新動態",
+    "titles": [
+      "AI行業新焦點",
+      "Google抗壟斷審判",
+      "SpaceX的AI應用",
+      "OpenAI的代理指南",
+      "AI趨勢與挑戰",
+      "未來展望",
+      "實用建議"
+    ]
+  },
+  {
+    "date": "2025-04-23T13:08:00.155625",
+    "signature": "7f86a2c7270e734f6fe978e0b5ebb09d",
+    "cover_heading": "Runway新視頻模型 AI生成革命",
+    "hashtag": "RunwayVideoModel",
+    "titles": [
+      "什麼是Runway新模型？",
+      "為何對學習者有價值？",
+      "如何開始使用？",
+      "實際應用例子",
+      "未來趨勢預測",
+      "潛在挑戰與解決"
+    ]
+  },
+  {
+    "date": "2025-04-23T13:10:19.583376",
+    "signature": "0a8f73a513cb6d33d993b57493ef4842",
+    "cover_heading": "LLM Mesh 革命 高效AI應用",
+    "hashtag": "AIInnovation",
+    "titles": [
+      "什麼是LLM Mesh？",
+      "為何它重要？",
+      "實際應用例子",
+      "學習LLM Mesh的技巧",
+      "未來趨勢預測",
+      "如何起步？"
+    ]
   }
 ]

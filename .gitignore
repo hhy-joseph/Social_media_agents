@@ -11,3 +11,4 @@ wheels/
 .env
 output/
 notebook_output/
+.DS_Store
