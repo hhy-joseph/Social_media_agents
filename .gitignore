@@ -12,3 +12,4 @@ wheels/
 output/
 notebook_output/
 .DS_Store
+outputs/
