@@ -77,7 +77,7 @@ class InstagramPoster:
     
     def prepare_images_for_posting(self, image_paths: List[str]) -> List[str]:
         """
-        Convert PNG images to JPG and ensure proper ordering
+        Ensure proper ordering of images (no conversion needed as we generate JPG directly)
         
         Args:
             image_paths: Paths to images to post
@@ -86,14 +86,8 @@ class InstagramPoster:
             List of prepared image paths
         """
         try:
-            # Convert PNG images to JPG
-            converted_paths = []
-            for path in image_paths:
-                if Path(path).suffix.lower() == '.png':
-                    converted_path = self.convert_png_to_jpg(path)
-                    converted_paths.append(converted_path)
-                else:
-                    converted_paths.append(path)
+            # Images are already in JPG format, just ensure proper ordering
+            converted_paths = image_paths
             
             # Ensure proper ordering: cover first, then content pages in order
             ordered_paths = []

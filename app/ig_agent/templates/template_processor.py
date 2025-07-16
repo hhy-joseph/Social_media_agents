@@ -70,6 +70,34 @@ class TemplateProcessor:
                 
         except Exception as e:
             logger.warning(f"Could not set font environment variables: {e}")
+    
+    def _convert_png_to_jpg(self, png_path: str, jpg_path: str):
+        """Convert PNG to JPG for Instagram compatibility"""
+        try:
+            from PIL import Image
+            
+            img = Image.open(png_path)
+            # Convert to RGB mode if the image has an alpha channel
+            if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img if img.mode == 'RGBA' else None)
+                img = rgb_img
+            
+            # Save as JPG with high quality
+            img.save(jpg_path, 'JPEG', quality=95)
+            
+            # Remove the PNG file
+            os.remove(png_path)
+            
+            logger.info(f"Converted {png_path} to {jpg_path}")
+            
+        except Exception as e:
+            logger.error(f"Failed to convert PNG to JPG: {e}")
+            # If conversion fails, try to rename PNG to JPG
+            try:
+                os.rename(png_path, jpg_path)
+            except:
+                pass
             
     def _convert_svg_to_png(self, svg_data, svg_path, output_path, description=""):
         """
@@ -97,17 +125,21 @@ class TemplateProcessor:
             temp_svg.close()
             
             try:
-                # First try with specific DPI for higher quality
+                # First try with specific DPI for higher quality - convert to JPG
                 subprocess.run(['rsvg-convert', '-d', '300', '-p', '300', '-f', 'png', 
-                              '-o', str(output_path), temp_svg.name], 
+                              '-o', str(output_path).replace('.jpg', '.png'), temp_svg.name], 
                               check=True, timeout=30)
+                # Convert PNG to JPG
+                self._convert_png_to_jpg(str(output_path).replace('.jpg', '.png'), str(output_path))
                 success = True
             except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e:
                 logger.warning(f"High-DPI rsvg-convert failed: {e}. Trying standard version...")
                 try:
                     # Fallback to standard conversion
-                    subprocess.run(['rsvg-convert', '-f', 'png', '-o', str(output_path), temp_svg.name], 
+                    subprocess.run(['rsvg-convert', '-f', 'png', '-o', str(output_path).replace('.jpg', '.png'), temp_svg.name], 
                                   check=True, timeout=30)
+                    # Convert PNG to JPG
+                    self._convert_png_to_jpg(str(output_path).replace('.jpg', '.png'), str(output_path))
                     success = True
                 except Exception:
                     success = False
@@ -149,12 +181,15 @@ class TemplateProcessor:
                              write_to=png_data, 
                              unsafe=True)
             
-            # Write the PNG data to file
-            with open(output_path, "wb") as f:
+            # Write the PNG data to temporary file, then convert to JPG
+            temp_png = str(output_path).replace('.jpg', '.png')
+            with open(temp_png, "wb") as f:
                 f.write(png_data.getvalue())
             
-            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                logger.info(f"Successfully converted SVG to PNG using CairoSVG (unsafe=True)")
+            if os.path.exists(temp_png) and os.path.getsize(temp_png) > 0:
+                # Convert to JPG
+                self._convert_png_to_jpg(temp_png, str(output_path))
+                logger.info(f"Successfully converted SVG to JPG using CairoSVG (unsafe=True)")
                 return True
                 
         except Exception as e:
@@ -163,10 +198,13 @@ class TemplateProcessor:
             try:
                 # Try standard CairoSVG without unsafe
                 logger.info(f"Attempting SVG conversion with standard CairoSVG for {description}...")
-                cairosvg.svg2png(bytestring=svg_data.encode('utf-8'), write_to=output_path)
+                temp_png = str(output_path).replace('.jpg', '.png')
+                cairosvg.svg2png(bytestring=svg_data.encode('utf-8'), write_to=temp_png)
                 
-                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                    logger.info(f"Successfully converted SVG to PNG using standard CairoSVG")
+                if os.path.exists(temp_png) and os.path.getsize(temp_png) > 0:
+                    # Convert to JPG
+                    self._convert_png_to_jpg(temp_png, str(output_path))
+                    logger.info(f"Successfully converted SVG to JPG using standard CairoSVG")
                     return True
             except Exception as e2:
                 logger.warning(f"Standard CairoSVG failed: {e2}. Trying direct file conversion...")
@@ -174,10 +212,13 @@ class TemplateProcessor:
                 try:
                     # Final fallback - try again with cairosvg directly on file
                     logger.info(f"Falling back to direct CairoSVG file conversion for {description}...")
-                    cairosvg.svg2png(url=str(svg_path), write_to=str(output_path))
+                    temp_png = str(output_path).replace('.jpg', '.png')
+                    cairosvg.svg2png(url=str(svg_path), write_to=temp_png)
                     
-                    if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                        logger.info(f"Successfully converted SVG to PNG using direct file CairoSVG")
+                    if os.path.exists(temp_png) and os.path.getsize(temp_png) > 0:
+                        # Convert to JPG
+                        self._convert_png_to_jpg(temp_png, str(output_path))
+                        logger.info(f"Successfully converted SVG to JPG using direct file CairoSVG")
                         return True
                 except Exception as e3:
                     logger.error(f"All CairoSVG methods failed. Last error: {e3}")
@@ -216,7 +257,7 @@ class TemplateProcessor:
         Returns:
             Path to generated image
         """
-        output_path = self.output_dir / "cover.png"
+        output_path = self.output_dir / "cover.jpg"
         
         if not self.templates["cover"].exists():
             raise FileNotFoundError(f"Cover template not found: {self.templates['cover']}")
@@ -318,7 +359,7 @@ class TemplateProcessor:
         Returns:
             Path to generated image
         """
-        output_path = self.output_dir / f"content_{page_number:02d}.png"
+        output_path = self.output_dir / f"content_{page_number:02d}.jpg"
         
         # Choose template based on whether we want image area
         template_name = "content_withimage" if with_image else "content_withoutimage"
@@ -335,166 +376,14 @@ class TemplateProcessor:
         # Use text element replacement for title to ensure Chinese font support
         svg_content = self._replace_text_element(svg_content, "content_title", page_data['title'])
         
-        # Add line breaks to main_point text
+        # Get main_point text without manual line breaks - let CSS handle wrapping
         main_point = page_data['main_point']
         
-        # Detect if text contains Chinese/Japanese/Korean characters
-        import re
-        has_cjk = bool(re.search(r'[\u4e00-\u9fff\u3040-\u30ff\u3400-\u4dbf]', main_point))
-        
-        if has_cjk:
-            # For CJK text, break by character count (each character is a word)
-            chars_per_line = 15  # Reduced for better fit within container
-            main_point_with_breaks = ""
-            
-            # Split text into characters and process
-            for i, char in enumerate(main_point):
-                if i > 0 and i % chars_per_line == 0:
-                    main_point_with_breaks += "\n"
-                main_point_with_breaks += char
-        else:
-            # For non-CJK text, break by word count
-            words_per_line = 12  # Reduced for better fit within container
-            main_point_with_breaks = ""
-            words = main_point.split()
-            current_line = ""
-            word_count = 0
-            
-            for word in words:
-                if word_count >= words_per_line:
-                    main_point_with_breaks += current_line.strip() + "\n"
-                    current_line = word + " "
-                    word_count = 1
-                else:
-                    current_line += word + " "
-                    word_count += 1
-            
-            main_point_with_breaks += current_line.strip()
-        
-        # Find the main_point foreignObject container to replace its content
-        import re
-        
-        # Approach: Convert from using foreignObject (which many SVG renderers have issues with)
-        # to using SVG native text elements for better compatibility
-        
-        # First check for foreignObject containing main_point
-        foreign_object_pattern = r'<foreignObject[^>]*>(.*?)<div[^>]*id="main_point"[^>]*>.*?</div>(.*?)</foreignObject>'
-        foreign_object_match = re.search(foreign_object_pattern, svg_content, re.DOTALL)
-        
-        if foreign_object_match:
-            # Get the coordinates and dimensions of the foreignObject
-            fo_coords = re.search(r'<foreignObject\s+x="(\d+)"\s+y="(\d+)"\s+width="(\d+)"\s+height="(\d+)"', svg_content)
-            if fo_coords:
-                x = int(fo_coords.group(1))
-                y = int(fo_coords.group(2))
-                width = int(fo_coords.group(3))
-                height = int(fo_coords.group(4))
-                
-                # Remove the foreignObject completely
-                svg_content = re.sub(foreign_object_pattern, '', svg_content, flags=re.DOTALL)
-                
-                # Create SVG native text elements instead
-                lines = main_point_with_breaks.split('\n')
-                line_height = 45  # Approximate line height
-                
-                # Generate text elements for each line
-                text_elements = []
-                base_y = y + 60  # Start y position with some margin from top
-                
-                for i, line in enumerate(lines):
-                    # Sanitize line content to be safe in XML
-                    safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    line_y = base_y + (i * line_height)
-                    text_elements.append(f'<text x="{x + 30}" y="{line_y}" font-family="Songti SC, PingFang SC, Heiti SC, STKaiti, Kaiti SC, SimSong, Noto Sans CJK SC, Arial Unicode MS, Arial, sans-serif" font-weight="bold" font-size="38" fill="#000000">{safe_line}</text>')
-                
-                # Join all text elements and insert them after the containing rect
-                rect_pattern = r'(<rect[^>]*x="{x}"[^>]*y="{y}"[^>]*width="{width}"[^>]*height="{height}"[^>]*/>|<rect[^>]*x="{x}"[^>]*y="{y}"[^>]*width="{width}"[^>]*height="{height}"[^>]*>)'
-                rect_pattern = rect_pattern.format(x=x, y=y, width=width, height=height).replace('[^>]*', '.*?')
-                
-                # Insert text elements after the rectangle
-                text_group = '\n  ' + '\n  '.join(text_elements)
-                svg_content = re.sub(rect_pattern, r'\1' + text_group, svg_content, flags=re.DOTALL)
-            else:
-                # If we can't get the coordinates, create new rect and text elements
-                # Place them in a sensible default position
-                x, y = 200, 280
-                
-                # Create SVG native text elements
-                lines = main_point_with_breaks.split('\n')
-                line_height = 45  # Approximate line height
-                
-                # Generate text elements for each line
-                text_elements = []
-                base_y = y + 60  # Start y position with some margin from top
-                
-                for i, line in enumerate(lines):
-                    # Sanitize line content to be safe in XML
-                    safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    line_y = base_y + (i * line_height)
-                    text_elements.append(f'<text x="{x + 30}" y="{line_y}" font-family="Songti SC, PingFang SC, Heiti SC, STKaiti, Kaiti SC, SimSong, Noto Sans CJK SC, Arial Unicode MS, Arial, sans-serif" font-weight="bold" font-size="38" fill="#000000">{safe_line}</text>')
-                
-                # Replace foreignObject with rect and text elements
-                height = max(400, (len(lines) + 1) * line_height)
-                replacement = f'<rect x="{x}" y="{y}" width="680" height="{height}" rx="20" ry="20" fill="#f0f0f0" stroke="#000000" stroke-width="1" />\n  ' + '\n  '.join(text_elements)
-                svg_content = re.sub(foreign_object_pattern, replacement, svg_content, flags=re.DOTALL)
-        
-        
-        else:
-            # For backward compatibility - if the template uses the old text approach
-            # First, look for a rect that might be the container for main_point
-            rect_pattern = r'<rect[^>]*x="(\d+)"[^>]*y="(\d+)"[^>]*width="(\d+)"[^>]*height="(\d+)"[^>]*fill="#f0f0f0"[^>]*>'
-            rect_match = re.search(rect_pattern, svg_content)
-            
-            # Default container dimensions if not found - from template inspection
-            rect_x = 150  # Approximate x position of the container
-            rect_y = 730  # Approximate y position of the container
-            rect_width = 780  # Approximate width of the container
-            rect_height = 150  # Approximate height of the container
-            
-            # If we found a container rect, use its dimensions
-            if rect_match:
-                rect_x = int(rect_match.group(1))
-                rect_y = int(rect_match.group(2))
-                rect_width = int(rect_match.group(3))
-                rect_height = int(rect_match.group(4))
-            
-            # Split the content into lines
-            lines = main_point_with_breaks.split('\n')
-            line_height = 45  # Approximate line height
-            
-            # Generate text elements for each line
-            text_elements = []
-            base_y = rect_y + 60  # Start y position with some margin from top
-            
-            for i, line in enumerate(lines):
-                # Sanitize line content to be safe in XML
-                safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                line_y = base_y + (i * line_height)
-                text_elements.append(f'<text x="{rect_x + 30}" y="{line_y}" font-family="Songti SC, PingFang SC, Heiti SC, STKaiti, Kaiti SC, SimSong, Noto Sans CJK SC, Arial Unicode MS, Arial, sans-serif" font-weight="bold" font-size="38" fill="#000000">{safe_line}</text>')
-            
-            # First, remove any existing main_point text element
-            svg_content = re.sub(
-                r'<text id="main_point"[^>]*>.*?</text>',
-                '',
-                svg_content,
-                flags=re.DOTALL
-            )
-            
-            # Then, add our new text elements after the container rectangle
-            if rect_match:
-                # Insert text elements after the rectangle
-                rect_full_match = rect_match.group(0)
-                text_group = '\n  ' + '\n  '.join(text_elements)
-                svg_content = svg_content.replace(rect_full_match, rect_full_match + text_group)
-            else:
-                # If no rect was found, add both a rectangle and the text elements
-                new_elements = f'''
-  <rect x="{rect_x}" y="{rect_y}" width="{rect_width}" height="{rect_height}" rx="20" ry="20" fill="#f0f0f0" stroke="#000000" stroke-width="1" />
-  {'\n  '.join(text_elements)}
-'''
-                # Insert before closing SVG tag
-                svg_content = svg_content.replace('</svg>', new_elements + '\n</svg>')
-            
+        # Replace the main_point placeholder in the foreignObject
+        svg_content = svg_content.replace(
+            '<div id="main_point">核心訊息放這裡（最多50字）</div>',
+            f'<div id="main_point">{main_point}</div>'
+        )
         
         # Write temporary SVG
         temp_svg_path = self.output_dir / f"content_{page_number:02d}.svg"
@@ -662,3 +551,74 @@ class TemplateProcessor:
                 svg_content = svg_content.replace(full_tag, new_tag)
         
         return svg_content
+    
+    def _split_text_for_svg(self, text: str, max_chars_per_line: int = 16) -> list:
+        """
+        Split text into lines suitable for SVG rendering
+        
+        Args:
+            text: Text to split
+            max_chars_per_line: Maximum characters per line
+            
+        Returns:
+            List of text lines
+        """
+        words = text.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            # Check if adding this word would exceed the line limit
+            test_line = current_line + " " + word if current_line else word
+            
+            if len(test_line) <= max_chars_per_line:
+                current_line = test_line
+            else:
+                # If current line is not empty, save it and start new line
+                if current_line:
+                    lines.append(current_line)
+                    current_line = word
+                else:
+                    # Word is too long, split it
+                    while len(word) > max_chars_per_line:
+                        lines.append(word[:max_chars_per_line])
+                        word = word[max_chars_per_line:]
+                    current_line = word
+        
+        # Add the last line if it's not empty
+        if current_line:
+            lines.append(current_line)
+            
+        return lines
+    
+    def _create_svg_text_block(self, text_lines: list, x: int, y: int, font_size: int, 
+                              line_height: int, max_width: int, fill: str = "#1d1d1f") -> str:
+        """
+        Create SVG text block with multiple lines
+        
+        Args:
+            text_lines: List of text lines
+            x: X position (center)
+            y: Y position (center of text block)
+            font_size: Font size
+            line_height: Line height
+            max_width: Maximum width for text
+            fill: Text color
+            
+        Returns:
+            SVG text element string
+        """
+        # Calculate starting Y position for vertical centering
+        total_height = len(text_lines) * line_height
+        start_y = y - (total_height / 2) + (line_height / 2)
+        
+        # Create the text element
+        svg_text = f'''<text x="{x}" font-family="Songti SC, PingFang SC, Heiti SC, STKaiti, Kaiti SC, SimSong, Noto Sans CJK SC, Arial Unicode MS, Helvetica, Arial, sans-serif" font-weight="600" font-size="{font_size}" text-anchor="middle" fill="{fill}">'''
+        
+        for i, line in enumerate(text_lines):
+            line_y = start_y + (i * line_height)
+            svg_text += f'\n    <tspan x="{x}" y="{line_y}">{line}</tspan>'
+        
+        svg_text += '\n  </text>'
+        
+        return svg_text

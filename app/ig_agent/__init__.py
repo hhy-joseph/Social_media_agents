@@ -1,8 +1,11 @@
 """
-Instagram Agent - A multi-agent system for Instagram content generation
+Instagram Agent - A workflow-based system for Instagram content generation
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from ig_agent.instagram_agent import InstagramAgent
-from ig_agent.pipeline import create_pipeline
+# Agent classes for workflow nodes
+from ig_agent.agents.content_agent import ContentAgent
+from ig_agent.agents.image_agent import ImageAgent
+from ig_agent.agents.notification_agent import NotificationAgent
+from ig_agent.agents.instagram_poster import InstagramPoster

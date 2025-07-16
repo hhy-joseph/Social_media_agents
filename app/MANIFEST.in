@@ -1,2 +1,0 @@
-include ig_agent/prompts/*.txt
-include ig_agent/static/*.svg

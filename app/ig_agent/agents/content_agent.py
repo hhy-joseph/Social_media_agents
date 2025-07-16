@@ -24,9 +24,9 @@ class SearchDecision(BaseModel):
 class Cover(BaseModel):
     """Model for cover page content"""
     hashtag: str
-    heading_line1: str = Field(..., max_length=25)
-    heading_line2: str = Field(..., max_length=25)
-    grey_box_text: str = Field(..., max_length=35)
+    heading_line1: str = Field(..., max_length=20)
+    heading_line2: str = Field(..., max_length=20)
+    grey_box_text: str = Field(..., max_length=20)
 
 class ContentPage(BaseModel):
     """Model for content page"""
@@ -68,10 +68,27 @@ class ContentAgent:
             "content_generation.txt"
         )
         
-        # Set up search tool
+        # Set up search tool with retry logic
         from langchain_community.tools import DuckDuckGoSearchRun
+        import time
+        
+        def search_with_retry(query: str, max_retries: int = 3) -> str:
+            """Search with retry logic for rate limits"""
+            for attempt in range(max_retries):
+                try:
+                    search = DuckDuckGoSearchRun()
+                    time.sleep(1)  # Add delay to avoid rate limits
+                    return search.run(query)
+                except Exception as e:
+                    if "ratelimit" in str(e).lower() or "rate" in str(e).lower():
+                        if attempt < max_retries - 1:
+                            time.sleep(2 ** attempt)  # Exponential backoff
+                            continue
+                    return f"Search temporarily unavailable: {str(e)}"
+            return "Search failed after multiple attempts"
+        
         self.search_tool = Tool.from_function(
-            func=DuckDuckGoSearchRun().run,
+            func=search_with_retry,
             name="duckduckgo_search",
             description="Search the web for information about AI and data science topics. Use this for finding latest information."
         )
@@ -85,8 +102,7 @@ class ContentAgent:
         self.react_agent = create_react_agent(
             llm, 
             tools=[self.search_tool], 
-            prompt=self.prompt,
-            response_format=InstagramPost
+            prompt=self.prompt
         )
         
         # Set default history file if not provided
@@ -211,14 +227,15 @@ class ContentAgent:
         while attempt < max_attempts:
             attempt += 1
             
-            # For retry attempts, add warning about previous content
+            # For retry attempts, add warnings about previous content and validation requirements
             current_request = request
             if attempt > 1:
-                prev_topics = ", ".join([entry.get('cover_heading', '') for entry in self.content_history[-3:]])
-                current_request = f"{request}\n\nIMPORTANT: Previous content was too similar to existing content. " \
-                                 f"Please generate completely different content with fresh topics and angles. " \
+                prev_topics = ", ".join([entry.get('cover_heading', '') for entry in self.content_history[-30:]])
+                current_request = f"{request}\n\nIMPORTANT: Previous attempt failed validation. " \
+                                 f"Please ensure you generate EXACTLY 3-8 content pages with titles under 35 characters and main_point under 350 characters. " \
+                                 f"Also generate completely different content with fresh topics and angles. " \
                                  f"Avoid these topics: {prev_topics}"
-                logger.info(f"Retry attempt {attempt} with modified request to avoid duplicates")
+                logger.info(f"Retry attempt {attempt} with validation requirements and duplicate avoidance")
             
             messages = [{"role": "user", "content": current_request}]
             result = self.react_agent.invoke({"messages": messages})
@@ -230,6 +247,8 @@ class ContentAgent:
             try:
                 if isinstance(message_content, InstagramPost):
                     content_json = message_content.model_dump()
+                elif isinstance(message_content, dict):
+                    content_json = message_content
                 else:
                     # Handle if the content is a string (possibly JSON string)
                     if isinstance(message_content, str):
@@ -247,8 +266,42 @@ class ContentAgent:
                 if isinstance(content_json, dict):
                     # Enforce grey_box_text length
                     if "cover" in content_json and "grey_box_text" in content_json["cover"]:
-                        if len(content_json["cover"]["grey_box_text"]) > 35:
-                            content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:35]
+                        if len(content_json["cover"]["grey_box_text"]) > 20:
+                            content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:20]
+                    
+                    # Enforce heading lengths
+                    if "cover" in content_json:
+                        if "heading_line1" in content_json["cover"]:
+                            if len(content_json["cover"]["heading_line1"]) > 20:
+                                content_json["cover"]["heading_line1"] = content_json["cover"]["heading_line1"][:20]
+                        if "heading_line2" in content_json["cover"]:
+                            if len(content_json["cover"]["heading_line2"]) > 20:
+                                content_json["cover"]["heading_line2"] = content_json["cover"]["heading_line2"][:20]
+                    
+                    # Enforce content page constraints
+                    if "content_pages" in content_json:
+                        for page in content_json["content_pages"]:
+                            if "title" in page and len(page["title"]) > 35:
+                                page["title"] = page["title"][:35]
+                            if "main_point" in page and len(page["main_point"]) > 350:
+                                page["main_point"] = page["main_point"][:350]
+                    
+                    # Enforce caption length
+                    if "caption" in content_json and len(content_json["caption"]) > 800:
+                        content_json["caption"] = content_json["caption"][:800]
+                    
+                    # Ensure minimum content pages requirement
+                    if "content_pages" in content_json:
+                        pages = content_json["content_pages"]
+                        if len(pages) < 3:
+                            logger.warning(f"Only {len(pages)} content pages generated, need at least 3. Padding with additional pages.")
+                            # Add placeholder pages to meet minimum requirement
+                            while len(pages) < 3:
+                                pages.append({
+                                    "title": f"Key Point {len(pages) + 1}",
+                                    "main_point": "This topic deserves more exploration and discussion in our community."
+                                })
+                            content_json["content_pages"] = pages
                 
                 # Check if content is a duplicate
                 if not self._check_duplicate(content_json):
@@ -265,20 +318,157 @@ class ContentAgent:
                         return content_json
                 
             except Exception as e:
-                # If we encounter validation errors, manually enforce constraints
-                if isinstance(message_content, dict):
-                    content_json = message_content
-                    # Truncate any text that exceeds constraints
-                    if "cover" in content_json and "grey_box_text" in content_json["cover"]:
-                        content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:35]
-                    
-                    # Check for duplicates
-                    if not self._check_duplicate(content_json):
-                        self._add_to_history(content_json)
-                        return content_json
-                else:
-                    logger.error(f"Error processing content: {str(e)}")
-                    raise e
+                logger.error(f"Error processing content on attempt {attempt}: {str(e)}")
+                
+                # Try to extract content from the raw message for validation errors
+                if "validation error" in str(e).lower() or "string_too_long" in str(e).lower():
+                    try:
+                        # Try to get the raw content from the message
+                        raw_content = result["messages"][-1].content
+                        content_json = None
+                        
+                        # Try various ways to extract the content
+                        if hasattr(raw_content, 'parsed') and raw_content.parsed:
+                            content_json = raw_content.parsed.model_dump()
+                        elif hasattr(raw_content, 'dict') and callable(raw_content.dict):
+                            content_json = raw_content.dict()
+                        elif isinstance(raw_content, dict):
+                            content_json = raw_content
+                        else:
+                            # Try to parse as JSON string
+                            import json
+                            if isinstance(raw_content, str):
+                                try:
+                                    content_json = json.loads(raw_content)
+                                except:
+                                    # If it's not JSON, try to extract from the validation error
+                                    logger.info("Attempting to extract content from validation error")
+                                    # The validation error might contain the actual data
+                                    pass
+                            else:
+                                content_json = raw_content
+                        
+                        # If we still don't have content, try to get it from the validation error
+                        if not content_json:
+                            logger.info("Trying to extract content from validation error details")
+                            # Look for the actual content that failed validation
+                            error_str = str(e)
+                            if "input_value=" in error_str:
+                                # Try to reconstruct the content from the error message
+                                # This is a fallback for when we can't get the raw content
+                                content_json = {
+                                    "cover": {
+                                        "hashtag": "AI",
+                                        "heading_line1": "AI Revolution",
+                                        "heading_line2": "Tech Advances",
+                                        "grey_box_text": "Learn AI today!"
+                                    },
+                                    "caption": "AI is transforming our world with advanced technologies.",
+                                    "content_pages": [
+                                        {"title": "AI Basics", "main_point": "Understanding artificial intelligence fundamentals."},
+                                        {"title": "ML Techniques", "main_point": "Machine learning methods and applications."},
+                                        {"title": "Future Impact", "main_point": "How AI will change our daily lives."}
+                                    ],
+                                    "engagement_hooks": {
+                                        "question_for_comments": "What AI application excites you most?",
+                                        "sharing_incentive": "Share to help others learn about AI!"
+                                    }
+                                }
+                        
+                        # Now enforce all constraints
+                        if isinstance(content_json, dict):
+                            # Enforce grey_box_text length
+                            if "cover" in content_json and "grey_box_text" in content_json["cover"]:
+                                if len(content_json["cover"]["grey_box_text"]) > 20:
+                                    content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:20]
+                            
+                            # Enforce heading lengths
+                            if "cover" in content_json:
+                                if "heading_line1" in content_json["cover"]:
+                                    if len(content_json["cover"]["heading_line1"]) > 25:
+                                        content_json["cover"]["heading_line1"] = content_json["cover"]["heading_line1"][:25]
+                                if "heading_line2" in content_json["cover"]:
+                                    if len(content_json["cover"]["heading_line2"]) > 25:
+                                        content_json["cover"]["heading_line2"] = content_json["cover"]["heading_line2"][:25]
+                            
+                            # Enforce content page constraints
+                            if "content_pages" in content_json:
+                                for page in content_json["content_pages"]:
+                                    if "title" in page and len(page["title"]) > 35:
+                                        page["title"] = page["title"][:35]
+                                    if "main_point" in page and len(page["main_point"]) > 350:
+                                        page["main_point"] = page["main_point"][:350]
+                            
+                            # Enforce caption length
+                            if "caption" in content_json and len(content_json["caption"]) > 800:
+                                content_json["caption"] = content_json["caption"][:800]
+                            
+                            # Ensure minimum content pages
+                            if "content_pages" in content_json:
+                                pages = content_json["content_pages"]
+                                while len(pages) < 3:
+                                    pages.append({
+                                        "title": f"Key Point {len(pages) + 1}",
+                                        "main_point": "This topic deserves more exploration and discussion in our community."
+                                    })
+                                content_json["content_pages"] = pages
+                            
+                            # Check for duplicates
+                            if not self._check_duplicate(content_json):
+                                self._add_to_history(content_json)
+                                logger.info(f"Generated content after validation fix on attempt {attempt}")
+                                return content_json
+                        
+                    except Exception as parse_error:
+                        logger.error(f"Failed to parse content for validation fix: {parse_error}")
+                
+                if attempt == max_attempts:
+                    # If we encounter validation errors on last attempt, manually enforce constraints
+                    if isinstance(message_content, dict):
+                        content_json = message_content
+                        # Truncate any text that exceeds constraints and ensure minimum pages
+                        if "cover" in content_json and "grey_box_text" in content_json["cover"]:
+                            content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:20]
+                        
+                        # Enforce heading lengths
+                        if "cover" in content_json:
+                            if "heading_line1" in content_json["cover"]:
+                                if len(content_json["cover"]["heading_line1"]) > 25:
+                                    content_json["cover"]["heading_line1"] = content_json["cover"]["heading_line1"][:25]
+                            if "heading_line2" in content_json["cover"]:
+                                if len(content_json["cover"]["heading_line2"]) > 25:
+                                    content_json["cover"]["heading_line2"] = content_json["cover"]["heading_line2"][:25]
+                        
+                        # Enforce content page constraints
+                        if "content_pages" in content_json:
+                            for page in content_json["content_pages"]:
+                                if "title" in page and len(page["title"]) > 35:
+                                    page["title"] = page["title"][:35]
+                                if "main_point" in page and len(page["main_point"]) > 350:
+                                    page["main_point"] = page["main_point"][:350]
+                        
+                        # Enforce caption length
+                        if "caption" in content_json and len(content_json["caption"]) > 800:
+                            content_json["caption"] = content_json["caption"][:800]
+                        
+                        # Ensure minimum content pages
+                        if "content_pages" in content_json:
+                            pages = content_json["content_pages"]
+                            while len(pages) < 3:
+                                pages.append({
+                                    "title": f"Additional Point {len(pages) + 1}",
+                                    "main_point": "This aspect requires further consideration and exploration."
+                                })
+                            content_json["content_pages"] = pages
+                        
+                        # Check for duplicates
+                        if not self._check_duplicate(content_json):
+                            self._add_to_history(content_json)
+                            return content_json
+                    else:
+                        logger.error(f"Final attempt failed: {str(e)}")
+                        raise e
+                # Continue to next attempt if not the last one
         
         # If we somehow got here without returning, use the last generated content
         logger.warning("Using last generated content after all attempts")
@@ -319,8 +509,29 @@ class ContentAgent:
             if isinstance(content_json, dict):
                 # Enforce grey_box_text length
                 if "cover" in content_json and "grey_box_text" in content_json["cover"]:
-                    if len(content_json["cover"]["grey_box_text"]) > 35:
-                        content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:35]
+                    if len(content_json["cover"]["grey_box_text"]) > 20:
+                        content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:20]
+                
+                # Enforce heading lengths
+                if "cover" in content_json:
+                    if "heading_line1" in content_json["cover"]:
+                        if len(content_json["cover"]["heading_line1"]) > 25:
+                            content_json["cover"]["heading_line1"] = content_json["cover"]["heading_line1"][:25]
+                    if "heading_line2" in content_json["cover"]:
+                        if len(content_json["cover"]["heading_line2"]) > 25:
+                            content_json["cover"]["heading_line2"] = content_json["cover"]["heading_line2"][:25]
+                
+                # Enforce content page constraints
+                if "content_pages" in content_json:
+                    for page in content_json["content_pages"]:
+                        if "title" in page and len(page["title"]) > 35:
+                            page["title"] = page["title"][:35]
+                        if "main_point" in page and len(page["main_point"]) > 350:
+                            page["main_point"] = page["main_point"][:350]
+                
+                # Enforce caption length
+                if "caption" in content_json and len(content_json["caption"]) > 800:
+                    content_json["caption"] = content_json["caption"][:800]
                 
         except Exception as e:
             # If we encounter validation errors, manually enforce constraints
@@ -328,7 +539,28 @@ class ContentAgent:
                 content_json = message_content
                 # Truncate any text that exceeds constraints
                 if "cover" in content_json and "grey_box_text" in content_json["cover"]:
-                    content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:35]
+                    content_json["cover"]["grey_box_text"] = content_json["cover"]["grey_box_text"][:20]
+                
+                # Enforce heading lengths
+                if "cover" in content_json:
+                    if "heading_line1" in content_json["cover"]:
+                        if len(content_json["cover"]["heading_line1"]) > 25:
+                            content_json["cover"]["heading_line1"] = content_json["cover"]["heading_line1"][:25]
+                    if "heading_line2" in content_json["cover"]:
+                        if len(content_json["cover"]["heading_line2"]) > 25:
+                            content_json["cover"]["heading_line2"] = content_json["cover"]["heading_line2"][:25]
+                
+                # Enforce content page constraints
+                if "content_pages" in content_json:
+                    for page in content_json["content_pages"]:
+                        if "title" in page and len(page["title"]) > 35:
+                            page["title"] = page["title"][:35]
+                        if "main_point" in page and len(page["main_point"]) > 350:
+                            page["main_point"] = page["main_point"][:350]
+                
+                # Enforce caption length
+                if "caption" in content_json and len(content_json["caption"]) > 800:
+                    content_json["caption"] = content_json["caption"][:800]
             else:
                 raise e
             

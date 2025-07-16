@@ -2,28 +2,33 @@
   <!-- Background -->
   <rect width="1080" height="1080" fill="#ffffff" />
   
-  <!-- Border -->
-  <rect x="35" y="35" width="1010" height="1010" rx="10" ry="10" fill="white" stroke="#000000" stroke-width="3" />
-  
   <!-- Hashtag -->
-  <text id="hashtag" x="540" y="120" font-family="Arial, sans-serif" font-weight="bold" font-size="50" text-anchor="middle" fill="#000000">#{Hashtag}</text>
+  <text id="hashtag" x="540" y="120" font-family="Helvetica, Arial, sans-serif" font-weight="400" font-size="32" text-anchor="middle" fill="#8e8e93">#{Hashtag}</text>
   
-  <!-- Divider -->
-  <line x1="385" y1="175" x2="695" y2="175" stroke="#000000" stroke-width="6" />
+  <!-- Subtle Divider -->
+  <line x1="440" y1="155" x2="640" y2="155" stroke="#f2f2f7" stroke-width="1" />
   
   <!-- Main Heading First Line -->
-  <text id="heading_line1" x="540" y="350" font-family="Arial, sans-serif" font-weight="bold" font-size="100" text-anchor="middle" fill="#000000">人工智能如何</text>
+  <text id="heading_line1" x="540" y="350" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="76" text-anchor="middle" fill="#1d1d1f">人工智能如何</text>
   
   <!-- Main Heading Second Line -->
-  <text id="heading_line2" x="540" y="530" font-family="Arial, sans-serif" font-weight="bold" font-size="100" text-anchor="middle" fill="#000000">改變數據分析？</text>
+  <text id="heading_line2" x="540" y="480" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="76" text-anchor="middle" fill="#1d1d1f">改變數據分析？</text>
   
-  <!-- Grey Box with Text -->
-  <rect x="158" y="695" width="764" height="80" rx="40" ry="40" fill="#f0f0f0" stroke="#000000" stroke-width="1" />
-  <text id="grey_box_text" x="540" y="750" font-family="Arial, sans-serif" font-weight="bold" font-size="50" text-anchor="middle" fill="#000000">掌握AI驅動的數據革命！</text>
+  <!-- Gradient Background for CTA -->
+  <defs>
+    <linearGradient id="ctaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#007aff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5856d6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- CTA Box -->
+  <rect x="140" y="620" width="800" height="80" rx="40" ry="40" fill="url(#ctaGradient)" />
+  <text id="grey_box_text" x="540" y="675" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="36" text-anchor="middle" fill="#ffffff">掌握AI驅動的數據革命！</text>
   
   <!-- Logo -->
-  <rect x="428" y="960" width="60" height="60" fill="#000000" />
-  <text id="logo_text" x="504" y="1000" font-family="Arial, sans-serif" font-weight="bold" font-size="50" text-anchor="start" fill="#000000">AI工程師</text>
-  <text id="sub_text" x="540" y="1030" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" fill="#555555">@datasci_daily</text>
+  <circle cx="488" cy="980" r="18" fill="#007aff" />
+  <text id="logo_text" x="520" y="990" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="36" text-anchor="start" fill="#1d1d1f">AI工程師</text>
+  <text id="sub_text" x="540" y="1020" font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle" fill="#8e8e93">@datasci_daily</text>
 
 </svg>
